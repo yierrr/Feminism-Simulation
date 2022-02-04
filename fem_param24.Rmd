@@ -1,0 +1,106 @@
+---
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r}
+data <- read_csv('fem_param24.csv')
+
+names(data)[1] = 'interaction'
+
+data <- data%>%
+  mutate(combination = paste('ff:', as.character(ff_pro), 'fm:', as.character(fm_pro), 'bench:', as.character(bench_pro)))
+
+```
+
+```{r}
+p_fem_trend <- ggplot(data, aes(y = fem_percent, x = interaction, group = combination , color = combination)) +
+    geom_line()
+p_fem_trend
+
+p_fem_pt <- ggplot(data) +
+    geom_point(aes(x = interaction, y=fem_percent, group = combination, color = combination))
+p_fem_pt
+```
+
+```{r}
+p_type <- ggplot(data, aes(x=round, y = type, group = combination, color = combination)) +
+    geom_point()
+p_type
+
+type_round <- tibble('round','number','type')[-1,]
+
+for(r in 0:49){
+  d <- data%>%filter(round==r)
+  num_nf = nrow(d%>%filter(type=='nf'))
+  type_round <-rbind(type_round, c(r,num_nf,'nf'))
+  num_nm = nrow(d%>%filter(type=='nm'))
+  type_round <-rbind(type_round, c(r,num_nm,'nm'))
+  num_ff = nrow(d%>%filter(type=='ff'))
+  type_round <-rbind(type_round, c(r,num_ff,'ff'))
+  num_fm = nrow(d%>%filter(type=='fm'))
+  type_round <-rbind(type_round, c(r,num_fm,'fm'))
+  num_m = nrow(d%>%filter(type=='m'))
+  type_round <-rbind(type_round, c(r,num_m,'m'))
+  num_f = nrow(d%>%filter(type=='f'))
+  type_round <-rbind(type_round, c(r,num_f,'f'))
+}
+
+names(type_round) <- c('round','number','type')
+
+p_type_round <- ggplot(type_round, aes(x=round, y=number,group = type, color = type)) +
+    geom_smooth(se=F)
+p_type_round
+
+
+```
+
+```{r}
+names(data)[6] = "low_group_wealth"
+names(data)[7] = "high_group_wealth"
+
+d_m <- data%>%filter(type == 'fm')%>%select(low_group_wealth)
+d_f <- data%>%filter(type == 'ff')%>%select(low_group_wealth)
+t.test(d_m,d_f)
+
+p_lw <- ggplot(data, aes(x=interaction,y=low_group_wealth, group = type, color = type)) +
+    geom_smooth(se=F)
+p_lw
+
+p_hw <- ggplot(data, aes(x=interaction,y=high_group_wealth, group = type, color = type)) +
+    geom_smooth(se=F)
+p_hw
+```
+
+```{r}
+names(data)[10] = "other_type"
+
+rel <- tibble('giving_rel')[-1,]
+for(i in 1:nrow(data)){
+  rel <- rbind(rel,paste(data[i,]['type'],'->',data[i,]['other_type']))
+}
+names(rel) = c('rel')
+giving_df <- cbind(data,rel)
+
+
+
+p_giving <- ggplot(giving_df, aes(x=round,y=giving, group = rel, color = rel)) +
+    geom_point()
+p_giving
+
+p_giving <- ggplot(giving_df, aes(x=round,y=giving, group = rel, color = rel)) +
+    geom_smooth(se=F)
+p_giving
+```
+
+
+
+
